@@ -37,18 +37,15 @@ public class ReportService {
 
         } else {
             return Boolean.TRUE;
-
         }
     }
 
-    public void insertData(String url, String uuid, ArrayList<Candidate> candidateList) {
+    public void insertData(String url, Report report) {
         RestTemplate resttemplate = new RestTemplate();
-        Report report = new Report();
-        report.setUuid(uuid);
-        report.setCandidateList(candidateList);
-        String target = String.format("%s/%s",url,uuid);
+
+        String target = String.format("%s/%s",url,report.getUuid());
         System.out.println(target);
-        report.setTotaldistance(distanceservice.getTotalDistance(candidateList));
+        report.setTotaldistance(distanceservice.getTotalDistance(report.getCandidateList()));
 //        System.out.println(target);
 //        HttpEntity<Report> request = new HttpEntity<>(report);
 //        ResponseEntity<Report> response = resttemplate

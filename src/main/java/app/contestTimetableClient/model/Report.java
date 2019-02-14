@@ -6,6 +6,7 @@ public class Report {
 
     private String uuid;
 
+
     private ArrayList<Candidate> candidateList;
     private double totaldistance;
     private double weightedscores;
@@ -20,6 +21,7 @@ public class Report {
     public void setUuid(String uuid) {
         this.uuid = uuid;
     }
+
 
     public ArrayList<Candidate> getCandidateList() {
         return candidateList;

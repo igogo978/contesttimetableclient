@@ -105,7 +105,7 @@ public class ArrangeLocationService {
     }
 
 
-    public ArrayList<Candidate> arrangeLocation(ArrayList<Candidate> candidatelist, Team team, Double distance) {
+    public ArrayList<Candidate> findLocation(ArrayList<Candidate> candidatelist, Team team, Double distance) {
 
 
 //        System.out.println(String.format("參賽隊：%s", schoolrepository.findBySchoolid(team.getSchoolid()).getSchoolname()));
@@ -177,10 +177,15 @@ public class ArrangeLocationService {
 
 
             for (Candidate candidate : candidatelist) {
-                if (candidate.getLocation().getSchoolid().equals(locationid)) {
+                if (candidate.getLocation().getSchoolid().equals(locationid) && candidate.getLocation().getCapacity() >= team.getMembers()) {
                     candidate.getTeams().add(team);
                     Integer capacity = candidate.getLocation().getCapacity() - team.getMembers();
                     candidate.getLocation().setCapacity(capacity);
+                } else {
+                    //完全沒場地可放
+                    if (candidate.getLocation().getSchoolid().equals("999999")) {
+                        candidate.getTeams().add(team);
+                    }
                 }
             }
 

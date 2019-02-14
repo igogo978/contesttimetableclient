@@ -75,7 +75,7 @@ public class InitService {
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
         String site = String.format("%s/%s", url, target);
-//        System.out.println(site);
+        System.out.println(site);
         result = resttemplate.getForEntity(site, String.class);
         node = mapper.readTree(result.getBody());
         node.forEach(item -> {

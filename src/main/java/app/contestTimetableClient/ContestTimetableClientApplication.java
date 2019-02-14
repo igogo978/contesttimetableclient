@@ -74,7 +74,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
         ResponseEntity<String> response = null;
         ObjectMapper mapper = new ObjectMapper();
         String url = null;
-        Integer jobpriority = null;
+        Integer contestid = null;
         String cwd = System.getProperty("user.dir");
         String target;
         Integer rounds = 0;
@@ -86,7 +86,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
             //jobpriority 為場次順序 例如第一天上半場為1, 第一天下半場為2
             node = mapper.readTree(new File(String.format("%s/%s", cwd, configfile)));
             url = node.get("url").asText();
-            jobpriority = node.get("jobpriority").asInt();
+            contestid = node.get("contestid").asInt();
             rounds = node.get("rounds").asInt();
         } else {
             System.out.println("無設定檔");
@@ -100,14 +100,14 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
         initservice.initLocation(url, "location");
 
         //取得參賽隊伍
-        initservice.initTeam(url, String.format("job/%s/%s", jobpriority, "schoolteam"));
+        initservice.initTeam(url, String.format("job/%s/%s", contestid, "schoolteam"));
 
         //是否取得門票
         initservice.initTicket(url, "ticket");
 
         //請求工作, 要算幾輪
         for (int round = 0; round < rounds; round++) {
-            target = String.format("%s/%s", url, String.format("job/%s", jobpriority));
+            target = String.format("%s/%s", url, String.format("job/%s", contestid));
 
             response = resttemplate.getForEntity(target, String.class);
             node = mapper.readTree(response.getBody());
@@ -131,12 +131,12 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
                     Report report = doJob(locations, group1, group2, acceptDistance);
                     //
 //                    //檢查uuid 是否已存在
-                    target = String.format("%s/job/%s/report", url, jobpriority);
+                    target = String.format("%s/job/%s/report", url, contestid);
 
                     if (!reportservice.isUuidExist(target, report.getUuid())) {
 //                        //若無則寫入此次記錄
                         System.out.println("寫入記錄");
-//                        reportservice.insertData(target, uuid, candidateList);
+                        reportservice.insertData(target, report);
                     }
                 }
             } else {
@@ -152,6 +152,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
         ObjectMapper mapper = new ObjectMapper();
         ArrayList<Candidate> candidateList = new ArrayList<>();
 
+
         for (String location : locations) {
             Candidate candidate = new Candidate();
             ArrayList<Team> teams = new ArrayList<>();
@@ -159,6 +160,14 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
             candidate.setTeams(teams);
             candidateList.add(candidate);
         }
+
+        //無法排入的參賽隊伍,歸到這裡
+        Location unknown = new Location("999999", "未知", 999);
+        Candidate candidate = new Candidate();
+        candidate.setLocation(unknown);
+        ArrayList<Team> noteams = new ArrayList<>();
+        candidate.setTeams(noteams);
+        candidateList.add(candidate);
 
         List<Team> teams = new ArrayList<>();
         group1.forEach(schoolid -> {
@@ -189,7 +198,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
                 candidateList = arrangeLocationService.setHomeLocation(candidateList, teams.get(i));
             } else {
                 //接受的距離
-                candidateList = arrangeLocationService.arrangeLocation(candidateList, teams.get(i), acceptDistance);
+                candidateList = arrangeLocationService.findLocation(candidateList, teams.get(i), acceptDistance);
             }
 //            System.out.println(uuid);
 //            System.out.println(mapper.writeValueAsString(candidateList));

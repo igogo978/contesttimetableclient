@@ -1,5 +1,5 @@
 {	
-    "url" : "http://163.17.40.153:8080",
-	"jobpriority" : 1,
+    "url" : "http://10.0.1.83:8080",
+	"contestid" : 1,
 	"rounds" : 1
 }
