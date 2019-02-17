@@ -162,13 +162,6 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
             candidateList.add(candidate);
         }
 
-        //無法排入的參賽隊伍,歸到這裡
-        Location unknown = new Location("999999", "未知", 999);
-        Candidate candidate = new Candidate();
-        candidate.setLocation(unknown);
-        ArrayList<Team> noteams = new ArrayList<>();
-        candidate.setTeams(noteams);
-        candidateList.add(candidate);
 
         List<Team> teams = new ArrayList<>();
         group1.forEach(schoolid -> {
