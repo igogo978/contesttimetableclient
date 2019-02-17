@@ -119,6 +119,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
                 String group2order = node.get("group2order").asText();
 
                 Long calculatejobs = node.get("calculatejobs").asLong();
+                calculatejobs = Long.valueOf(1);
 
                 List<String> locations = Arrays.asList(locationorder.split("-"));
                 List<String> group1 = Arrays.asList(group1order.split("-"));

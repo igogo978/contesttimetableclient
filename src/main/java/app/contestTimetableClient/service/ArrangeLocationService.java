@@ -53,7 +53,7 @@ public class ArrangeLocationService {
         String pos1 = schoolrepository.findBySchoolid(team.getSchoolid()).getPosition();
         Double latitude1 = Double.valueOf(pos1.split(",")[0]);
         Double longitude1 = Double.valueOf(pos1.split(",")[1]);
-        String locationid = candidatelist.get(0).getLocation().getSchoolid();
+        String locationid = "";
         double distance = 9999999;
 
         for (Candidate candidate : candidatelist) {
@@ -69,11 +69,19 @@ public class ArrangeLocationService {
                     distance = distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2);
                 }
 //                System.out.println(String.format("%s,%s,差距:%s公尺", candidate.getLocation().getName(), team.getName(), distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2)));
-
             }
 
         }
 //        System.out.println("最短距離：" + distance);
+
+        //找不到容納場地
+        if (locationid.length() == 0) {
+            //完全沒場地可放
+            System.out.println("找不到場地:" + team.getSchoolid());
+            locationid = "999999";
+        }
+
+
         return locationid;
     }
 
@@ -105,7 +113,7 @@ public class ArrangeLocationService {
     }
 
 
-    public ArrayList<Candidate> findLocation(ArrayList<Candidate> candidatelist, Team team, Double distance) {
+    public ArrayList<Candidate> findLocation(ArrayList<Candidate> candidatelist, Team team, Double nearDistance) {
 
 
 //        System.out.println(String.format("參賽隊：%s", schoolrepository.findBySchoolid(team.getSchoolid()).getSchoolname()));
@@ -134,7 +142,7 @@ public class ArrangeLocationService {
             Double longitude2 = Double.valueOf(location.getPosition().split(",")[1]);
 
             //尋找就近場地
-            if (distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2) <= distance) {
+            if (distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2) <= nearDistance) {
 
                 //要能容納隊伍人數
                 if (candidate.getLocation().getCapacity() >= team.getMembers()) {
@@ -168,24 +176,21 @@ public class ArrangeLocationService {
             });
         } else {
             //沒有理想距離內的試場, 從全部找一個最近的
+            System.out.println(String.format("schoolid:%s,人數:%s", team.getSchoolid(), team.getMembers()));
             String locationid = shortestDistanceLocation(candidatelist, team);
+            System.out.println("沒有理想的,尋找最近的location:" + locationid);
 
             School location = schoolrepository.findBySchoolid(locationid);
             Double latitude2 = Double.valueOf(location.getPosition().split(",")[0]);
             Double longitude2 = Double.valueOf(location.getPosition().split(",")[1]);
             team.setDistance(distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2));
 
-
+            //更新場地容納人數
             for (Candidate candidate : candidatelist) {
-                if (candidate.getLocation().getSchoolid().equals(locationid) && candidate.getLocation().getCapacity() >= team.getMembers()) {
+                if (candidate.getLocation().getSchoolid().equals(locationid)) {
                     candidate.getTeams().add(team);
                     Integer capacity = candidate.getLocation().getCapacity() - team.getMembers();
                     candidate.getLocation().setCapacity(capacity);
-                } else {
-                    //完全沒場地可放
-                    if (candidate.getLocation().getSchoolid().equals("999999")) {
-                        candidate.getTeams().add(team);
-                    }
                 }
             }
 
