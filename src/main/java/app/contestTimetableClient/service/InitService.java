@@ -1,6 +1,7 @@
 package app.contestTimetableClient.service;
 
 
+import app.contestTimetableClient.model.Contestid;
 import app.contestTimetableClient.model.Location;
 import app.contestTimetableClient.model.School;
 import app.contestTimetableClient.model.Team;
@@ -15,6 +16,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 @Service
 public class InitService {
@@ -38,7 +41,7 @@ public class InitService {
 
 //        String cwd = System.getProperty("user.dir");
         String site = String.format("%s/%s", url, target);
-
+//        System.out.println("initschool:" + site);
         result = resttemplate.getForEntity(site, String.class);
         node = mapper.readTree(result.getBody());
 
@@ -64,7 +67,12 @@ public class InitService {
             String schoolid = location.get("schoolid").asText();
             String name = schoolrepository.findBySchoolid(location.get("schoolid").asText()).getSchoolname();
             Integer capacity = location.get("capacity").asInt();
-            locationrepository.save(new Location(schoolid, name, capacity));
+            List<Contestid> contestids = new ArrayList<>();
+            location.get("contestids").forEach(contestidNode -> {
+//               System.out.println(contestidNode.get("contestid").asInt());
+                contestids.add(new Contestid(contestidNode.get("contestid").asInt(), contestidNode.get("members").asInt()));
+            });
+            locationrepository.save(new Location(schoolid, name, capacity, contestids));
         });
 
     }
@@ -75,7 +83,6 @@ public class InitService {
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
         String site = String.format("%s/%s", url, target);
-        System.out.println(site);
         result = resttemplate.getForEntity(site, String.class);
         node = mapper.readTree(result.getBody());
         node.forEach(item -> {
@@ -83,32 +90,20 @@ public class InitService {
             String schoolname = item.get("schoolname").asText();
             Integer members = item.get("members").asInt();
             String ticket = "";
-            teamrepository.save(new Team(schoolid, schoolname, members, ticket));
+            Double distance = 0.0;
+            List<Contestid> contestids = new ArrayList<>();
+            item.get("contestids").forEach(contestidNode -> {
+//               System.out.println(contestidNode.get("contestid").asInt());
+                contestids.add(new Contestid(contestidNode.get("contestid").asInt(), contestidNode.get("members").asInt()));
+            });
+
+
+            teamrepository.save(new Team(schoolid, schoolname, members, distance, contestids));
         });
 
     }
 
-    public void initTicket(String url, String target) throws IOException {
-        RestTemplate resttemplate = new RestTemplate();
-        JsonNode node = null;
-        ResponseEntity<String> result = null;
-        ObjectMapper mapper = new ObjectMapper();
-        String site = String.format("%s/%s", url, target);
 
-        result = resttemplate.getForEntity(site, String.class);
-        node = mapper.readTree(result.getBody());
-        node.forEach(ticket -> {
-//            System.out.println(ticket.get("schoolid").asText());
-            String schoolid = ticket.get("schoolid").asText();
-//            System.out.println(teamrepository.countBySchoolid(schoolid));
-            if (teamrepository.countBySchoolid(schoolid) != 0) {
-                Team team = teamrepository.findBySchoolid(schoolid);
-                team.setTicket(ticket.get("location").asText());
-                teamrepository.save(team);
-            }
-        });
-
-    }
 
 
 }

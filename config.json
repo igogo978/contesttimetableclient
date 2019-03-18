@@ -1,5 +1,6 @@
 {	
-    "url" : "http://192.168.1.147:8080",
-	"contestid" : 1,
+    "url" : "http://192.168.1.151:8080",	
+	"split" : 1,
+	"ranking" : 1,	
 	"rounds" : 1
 }

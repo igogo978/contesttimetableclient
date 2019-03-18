@@ -5,8 +5,8 @@ import java.util.List;
 
 public class Candidate {
 
-   private Location location;
-   private ArrayList<Team> teams;
+    private Location location;
+    private List<Team> teams;
 
     public Candidate() {
     }
@@ -19,7 +19,11 @@ public class Candidate {
         this.location = location;
     }
 
-    public ArrayList<Team> getTeams() {
+    public void setTeams(List<Team> teams) {
+        this.teams = teams;
+    }
+
+    public List<Team> getTeams() {
         return teams;
     }
 

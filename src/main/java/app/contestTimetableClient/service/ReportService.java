@@ -26,7 +26,7 @@ public class ReportService {
         ObjectMapper mapper = new ObjectMapper();
         RestTemplate resttemplate = new RestTemplate();
         String target = String.format("%s/%s", url, uuid);
-        System.out.println(target);
+//        System.out.println(target);
         ResponseEntity<String> result = resttemplate.getForEntity(target, String.class);
         JsonNode node = mapper.readTree(result.getBody());
 
@@ -44,8 +44,8 @@ public class ReportService {
         RestTemplate resttemplate = new RestTemplate();
 
         String target = String.format("%s/%s",url,report.getUuid());
-        System.out.println(target);
-        report.setTotaldistance(distanceservice.getTotalDistance(report.getCandidateList()));
+//        System.out.println(target);
+//        report.setTotaldistance(distanceservice.getTotalDistance(report.getCandidateList()));
 //        System.out.println(target);
 //        HttpEntity<Report> request = new HttpEntity<>(report);
 //        ResponseEntity<Report> response = resttemplate

@@ -1,7 +1,11 @@
 package app.contestTimetableClient.model;
 
+import javax.persistence.ElementCollection;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.Id;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 public class Team {
@@ -10,26 +14,24 @@ public class Team {
     private String schoolid;
     private String name;
     private int members;
-    private String ticket;
+
     private double distance;
 
-
+    @ElementCollection(fetch = FetchType.EAGER)
+    private List<Contestid> contestids = new ArrayList<Contestid>();
 
     public Team() {
     }
 
-    public Team(String schoolid, String name, int members) {
+    public Team(String schoolid, String name, int members, double distance, List<Contestid> contestids) {
         this.schoolid = schoolid;
         this.name = name;
         this.members = members;
+        this.distance = distance;
+        this.contestids = contestids;
     }
 
-    public Team(String schoolid, String name, int members, String ticket) {
-        this.schoolid = schoolid;
-        this.name = name;
-        this.members = members;
-        this.ticket = ticket;
-    }
+
 
     public String getSchoolid() {
         return schoolid;
@@ -63,11 +65,8 @@ public class Team {
         this.distance = distance;
     }
 
-    public String getTicket() {
-        return ticket;
-    }
 
-    public void setTicket(String ticket) {
-        this.ticket = ticket;
+    public List<Contestid> getContestids() {
+        return contestids;
     }
 }

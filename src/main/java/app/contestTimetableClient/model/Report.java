@@ -9,7 +9,7 @@ public class Report {
 
     private ArrayList<Candidate> candidateList;
     private double totaldistance;
-    private double weightedscores;
+
 
     public Report() {
     }
@@ -39,11 +39,4 @@ public class Report {
         this.totaldistance = totaldistance;
     }
 
-    public double getWeightedscores() {
-        return weightedscores;
-    }
-
-    public void setWeightedscores(double weightedscores) {
-        this.weightedscores = weightedscores;
-    }
 }
