@@ -1,10 +1,9 @@
 package app.contestTimetableClient.service;
 
 
-import app.contestTimetableClient.model.Contestid;
-import app.contestTimetableClient.model.Location;
-import app.contestTimetableClient.model.School;
-import app.contestTimetableClient.model.Team;
+import app.contestTimetableClient.model.*;
+import app.contestTimetableClient.model.scores.Areascore;
+import app.contestTimetableClient.repository.AreascoreRepository;
 import app.contestTimetableClient.repository.LocationRepository;
 import app.contestTimetableClient.repository.SchoolRepository;
 import app.contestTimetableClient.repository.TeamRepository;
@@ -30,6 +29,9 @@ public class InitService {
 
     @Autowired
     TeamRepository teamrepository;
+
+    @Autowired
+    AreascoreRepository areascoreRepository;
 
 
     public void initSchool(String url, String target) throws IOException {
@@ -101,9 +103,52 @@ public class InitService {
             teamrepository.save(new Team(schoolid, schoolname, members, distance, contestids));
         });
 
+
     }
 
+    public List<Ticket> initTicket(String url, String target) throws IOException {
+        List<Ticket> tickets = new ArrayList<>();
+        RestTemplate resttemplate = new RestTemplate();
+        JsonNode node = null;
+        ResponseEntity<String> result = null;
+        ObjectMapper mapper = new ObjectMapper();
+        String site = String.format("%s/%s", url, target);
+        result = resttemplate.getForEntity(site, String.class);
+        node = mapper.readTree(result.getBody());
+        node.forEach(ticket -> {
+            Ticket t = new Ticket();
+            t.setLocationid(ticket.get("locationid").asText());
+            t.setLocationname(ticket.get("locationname").asText());
+            t.setSchoolid(ticket.get("schoolid").asText());
+            t.setSchoolname(ticket.get("schoolname").asText());
 
+            tickets.add(t);
+        });
+
+        return tickets;
+    }
+
+    public void initScoresArea(String url, String target) throws IOException {
+        List<Areascore> areas = new ArrayList<>();
+        RestTemplate resttemplate = new RestTemplate();
+        JsonNode root = null;
+        ResponseEntity<String> result = null;
+        ObjectMapper mapper = new ObjectMapper();
+        String site = String.format("%s/%s", url, target);
+        result = resttemplate.getForEntity(site, String.class);
+
+        root = mapper.readTree(result.getBody());
+
+        root.forEach(node->{
+            Areascore area = new Areascore();
+            area.setStartarea(node.get("startarea").asText());
+            area.setEndarea(node.get("endarea").asText());
+            area.setScores(node.get("scores").asDouble());
+            areascoreRepository.save(area);
+        });
+
+
+    }
 
 
 }

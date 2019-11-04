@@ -3,7 +3,7 @@ package app.contestTimetableClient.service;
 import app.contestTimetableClient.model.Candidate;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 
 @Service
@@ -42,12 +42,12 @@ public class DistanceService {
 
     }
 
-    public Double getTotalDistance(ArrayList<Candidate> candidatelist){
+    public Double getTotalDistance(List<Candidate> candidatelist){
         AtomicReference<Double> totaldistance = new AtomicReference<>(0.0);
 
         candidatelist.forEach(candidate -> {
             candidate.getTeams().forEach(team -> {
-                totaldistance.updateAndGet(v -> new Double((double) (v + team.getDistance())));
+                totaldistance.updateAndGet(v -> new Double((double) (v + team.getScores())));
             });
         });
 //        System.out.println("總共distance："+totaldistance.get());

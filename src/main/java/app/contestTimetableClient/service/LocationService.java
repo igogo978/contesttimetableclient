@@ -1,10 +1,11 @@
 package app.contestTimetableClient.service;
 
-import app.contestTimetableClient.model.Candidate;
-import app.contestTimetableClient.model.Contestid;
-import app.contestTimetableClient.model.School;
-import app.contestTimetableClient.model.Team;
+import app.contestTimetableClient.model.*;
+import app.contestTimetableClient.model.scores.Areascore;
+import app.contestTimetableClient.repository.AreascoreRepository;
 import app.contestTimetableClient.repository.SchoolRepository;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -21,6 +22,9 @@ public class LocationService {
 
     @Autowired
     DistanceService distanceservice;
+
+    @Autowired
+    AreascoreRepository areascoreRepository;
 
     //是否有入場卷
     public Boolean isCapable(List<Candidate> candidatelist, Team team) {
@@ -76,6 +80,63 @@ public class LocationService {
     //找出可容納的場地
     public List<String> findCapableLocations(List<Candidate> candidatelist, Team team) {
         List<String> capableLocations = new ArrayList<>();
+        Integer teamMembersid1 = null;
+        Integer teamMembersid2 = null;
+        Integer teamMembersid3 = null;
+        Integer teamMembersid4 = null;
+        for (Contestid contestid : team.getContestids()) {
+            if (contestid.getContestid() == 1) {
+                teamMembersid1 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 2) {
+                teamMembersid2 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 3) {
+                teamMembersid3 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 4) {
+                teamMembersid4 = contestid.getMembers();
+            }
+        }
+
+        for (Candidate candidate : candidatelist) {
+            Integer locationid1 = null;
+            Integer locationid2 = null;
+            Integer locationid3 = null;
+            Integer locationid4 = null;
+            for (Contestid contestid : candidate.getLocation().getContestids()) {
+                if (contestid.getContestid() == 1) {
+                    locationid1 = contestid.getMembers();
+                }
+                if (contestid.getContestid() == 2) {
+                    locationid2 = contestid.getMembers();
+                }
+                if (contestid.getContestid() == 3) {
+                    locationid3 = contestid.getMembers();
+                }
+                if (contestid.getContestid() == 4) {
+                    locationid4 = contestid.getMembers();
+                }
+            }
+
+            if (locationid1 >= teamMembersid1 && locationid2 >= teamMembersid2 && locationid3 >= teamMembersid3 && locationid4 >= teamMembersid4) {
+                capableLocations.add(candidate.getLocation().getSchoolid());
+            }
+        }
+        return capableLocations;
+    }
+
+
+    public Candidate addPendingList(Candidate pending, Team team) {
+        pending.getTeams().add(team);
+        return pending;
+    }
+
+
+    //列入優先排學校,例如承辦比賽學校
+    public List<Candidate> addPriorityTeam(List<Candidate> candidatelist, Team team) throws JsonProcessingException {
+
+//        ObjectMapper mapper = new ObjectMapper();
         Integer teamid1 = 0;
         Integer teamid2 = 0;
         Integer teamid3 = 0;
@@ -95,64 +156,12 @@ public class LocationService {
             }
         }
 
+
+        //主場
         for (Candidate candidate : candidatelist) {
-            Integer locationid1 = 0;
-            Integer locationid2 = 0;
-            Integer locationid3 = 0;
-            Integer locationid4 = 0;
-            for (Contestid contestid : candidate.getLocation().getContestids()) {
-                if (contestid.getContestid() == 1) {
-                    locationid1 = contestid.getMembers();
-                }
-                if (contestid.getContestid() == 2) {
-                    locationid2 = contestid.getMembers();
-                }
-                if (contestid.getContestid() == 3) {
-                    locationid3 = contestid.getMembers();
-                }
-                if (contestid.getContestid() == 4) {
-                    locationid4 = contestid.getMembers();
-                }
-            }
-
-            if (locationid1 >= teamid1 && locationid2 >= teamid2 && locationid3 >= teamid3 && locationid4 >= teamid4) {
-                capableLocations.add(candidate.getLocation().getSchoolid());
-            }
-        }
-        return capableLocations;
-    }
-
-
-    public Candidate addPendingList(Candidate pending, Team team) {
-        pending.getTeams().add(team);
-        return pending;
-    }
-
-    public List<Candidate> addPriorityTeam(List<Candidate> candidatelist, Team team) {
-        //members
-        Integer teamid1 = null;
-        Integer teamid2 = null;
-        Integer teamid3 = null;
-        Integer teamid4 = null;
-        for (Contestid contestid : team.getContestids()) {
-            if (contestid.getContestid() == 1) {
-                teamid1 = contestid.getMembers();
-            }
-            if (contestid.getContestid() == 2) {
-                teamid2 = contestid.getMembers();
-            }
-            if (contestid.getContestid() == 3) {
-                teamid3 = contestid.getMembers();
-            }
-            if (contestid.getContestid() == 4) {
-                teamid4 = contestid.getMembers();
-            }
-        }
-
-        for (Candidate candidate : candidatelist) {
-            //找到符合場地
             if (candidate.getLocation().getSchoolid().equals(team.getSchoolid())) {
-                team.setDistance(0);
+//                System.out.println("主場學校:"+team.getName());
+
                 for (Contestid contestid : candidate.getLocation().getContestids()) {
                     if (contestid.getContestid() == 1) {
                         contestid.setMembers(contestid.getMembers() - teamid1);
@@ -168,13 +177,91 @@ public class LocationService {
                     }
 
                 }
+                team.setScores(0.0);
                 candidate.getTeams().add(team);
             }
         }
+
+
+//        System.out.println("加入參賽隊伍:"+mapper.writeValueAsString(candidatelist));
         return candidatelist;
     }
 
-    public List<String> findNeighborLocation(List<String> capableLocations, Team team, Double neighborDistance) {
+
+    public List<Candidate> addTicketTeam(List<Candidate> candidatelist, String schoolid, Team team) throws JsonProcessingException {
+        //擁有門票者
+        Integer teamid1 = 0;
+        Integer teamid2 = 0;
+        Integer teamid3 = 0;
+        Integer teamid4 = 0;
+        for (Contestid contestid : team.getContestids()) {
+            if (contestid.getContestid() == 1) {
+                teamid1 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 2) {
+                teamid2 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 3) {
+                teamid3 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 4) {
+                teamid4 = contestid.getMembers();
+            }
+        }
+
+
+        for (Candidate candidate : candidatelist) {
+            if (candidate.getLocation().getSchoolid().equals(schoolid)) {
+//                        System.out.println("location:" + ticket.getLocationname() + "ticket:" + ticket.getSchoolname());
+                for (Contestid contestid : candidate.getLocation().getContestids()) {
+                    if (contestid.getContestid() == 1) {
+                        contestid.setMembers(contestid.getMembers() - teamid1);
+                    }
+                    if (contestid.getContestid() == 2) {
+                        contestid.setMembers(contestid.getMembers() - teamid2);
+                    }
+                    if (contestid.getContestid() == 3) {
+                        contestid.setMembers(contestid.getMembers() - teamid3);
+                    }
+                    if (contestid.getContestid() == 4) {
+                        contestid.setMembers(contestid.getMembers() - teamid4);
+                    }
+
+                }
+                team.setScores(0.0);
+                candidate.getTeams().add(team);
+            }
+        }
+
+
+        return candidatelist;
+    }
+
+    public List<String> findNeighborAreaLocations(List<String> capableLocations, Team team, Double neighborScores) {
+        List<String> neighborLocations = new ArrayList<>();
+        List<String> neighborAreas = new ArrayList<>();
+
+        //("(?<=區)") regex look behind
+        String startarea = team.getName().split("(?<=區)")[0];
+//        System.out.println("find neighbor area:" + team.getName().split("(?<=區)")[0]);
+        areascoreRepository.findByStartareaAndScoresLessThanEqual(startarea, neighborScores).forEach(area -> {
+//            System.out.println(String.format("%s->%s:%f",area.getStartarea(),area.getEndarea(),area.getScores()));
+            neighborAreas.add(area.getEndarea());
+        });
+
+
+        capableLocations.forEach(location -> {
+            String endarea = schoolrepository.findBySchoolid(location).getSchoolname().split("(?<=區)")[0];
+            if (neighborAreas.stream().anyMatch(neighbor -> neighbor.equals(endarea))) {
+//                System.out.println(String.format("%s->%s", team.getName(), schoolrepository.findBySchoolid(location).getSchoolname()));
+                neighborLocations.add(location);
+            }
+        });
+        return neighborLocations;
+    }
+
+
+    public List<String> findNeighborLocations(List<String> capableLocations, Team team, Double neighborDistance) {
         String pos1 = schoolrepository.findBySchoolid(team.getSchoolid()).getPosition();
         Double latitude1 = Double.valueOf(pos1.split(",")[0]);
         Double longitude1 = Double.valueOf(pos1.split(",")[1]);
@@ -191,7 +278,9 @@ public class LocationService {
         return neighborLocations;
     }
 
-    public List<Candidate> addNeighborTeam(List<Candidate> candidatelist, Team team, String neighborid) {
+    public List<Candidate> addTeam(List<Candidate> candidatelist, Team team, Areascore area){
+        team.setScores(area.getScores());
+
         //members
         Integer teamid1 = null;
         Integer teamid2 = null;
@@ -213,22 +302,68 @@ public class LocationService {
         }
 
         for (Candidate candidate : candidatelist) {
-            if (candidate.getLocation().getSchoolid().equals(neighborid)) {
-                String pos1 = schoolrepository.findBySchoolid(team.getSchoolid()).getPosition();
-                Double latitude1 = Double.valueOf(pos1.split(",")[0]);
-                Double longitude1 = Double.valueOf(pos1.split(",")[1]);
-
-                School location = schoolrepository.findBySchoolid(neighborid);
-                Double latitude2 = Double.valueOf(location.getPosition().split(",")[0]);
-                Double longitude2 = Double.valueOf(location.getPosition().split(",")[1]);
-                Double distance = distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2);
-                team.setDistance(distance);
+            if (candidate.getLocation().getSchoolid().equals(area.getEndarea())) {
                 for (Contestid contestid : candidate.getLocation().getContestids()) {
                     if (contestid.getContestid() == 1) {
                         contestid.setMembers(contestid.getMembers() - teamid1);
                     }
                     if (contestid.getContestid() == 2) {
                         contestid.setMembers(contestid.getMembers() - teamid2);
+
+                    }
+                    if (contestid.getContestid() == 3) {
+                        contestid.setMembers(contestid.getMembers() - teamid3);
+                    }
+                    if (contestid.getContestid() == 4) {
+                        contestid.setMembers(contestid.getMembers() - teamid4);
+                    }
+
+                }
+                candidate.getTeams().add(team);
+
+            }
+        }
+
+        return candidatelist;
+    }
+
+    public List<Candidate> addTeamByArea(List<Candidate> candidatelist, Team team, String locationid) {
+        //得分
+        String starterea = team.getName().split("(?<=區)")[0];
+        String endarea = schoolrepository.findBySchoolid(locationid).getSchoolname().split("(?<=區)")[0];
+        Areascore area = areascoreRepository.findByStartareaAndEndarea(starterea,endarea);
+        team.setScores(area.getScores());
+
+        //members
+        Integer teamid1 = null;
+        Integer teamid2 = null;
+        Integer teamid3 = null;
+        Integer teamid4 = null;
+        for (Contestid contestid : team.getContestids()) {
+            if (contestid.getContestid() == 1) {
+                teamid1 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 2) {
+                teamid2 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 3) {
+                teamid3 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 4) {
+                teamid4 = contestid.getMembers();
+            }
+        }
+
+        for (Candidate candidate : candidatelist) {
+            if (candidate.getLocation().getSchoolid().equals(locationid)) {
+
+                for (Contestid contestid : candidate.getLocation().getContestids()) {
+                    if (contestid.getContestid() == 1) {
+                        contestid.setMembers(contestid.getMembers() - teamid1);
+                    }
+                    if (contestid.getContestid() == 2) {
+                        contestid.setMembers(contestid.getMembers() - teamid2);
+
                     }
                     if (contestid.getContestid() == 3) {
                         contestid.setMembers(contestid.getMembers() - teamid3);
@@ -243,6 +378,99 @@ public class LocationService {
             }
         }
         return candidatelist;
+    }
+
+    public List<Candidate> addTeam(List<Candidate> candidatelist, Team team, String locationid) {
+        //members
+        Integer teamid1 = null;
+        Integer teamid2 = null;
+        Integer teamid3 = null;
+        Integer teamid4 = null;
+        for (Contestid contestid : team.getContestids()) {
+            if (contestid.getContestid() == 1) {
+                teamid1 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 2) {
+                teamid2 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 3) {
+                teamid3 = contestid.getMembers();
+            }
+            if (contestid.getContestid() == 4) {
+                teamid4 = contestid.getMembers();
+            }
+        }
+
+        for (Candidate candidate : candidatelist) {
+            if (candidate.getLocation().getSchoolid().equals(locationid)) {
+                String pos1 = schoolrepository.findBySchoolid(team.getSchoolid()).getPosition();
+                Double latitude1 = Double.valueOf(pos1.split(",")[0]);
+                Double longitude1 = Double.valueOf(pos1.split(",")[1]);
+
+                School location = schoolrepository.findBySchoolid(locationid);
+                Double latitude2 = Double.valueOf(location.getPosition().split(",")[0]);
+                Double longitude2 = Double.valueOf(location.getPosition().split(",")[1]);
+                Double distance = distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2);
+                team.setScores(distance);
+
+                for (Contestid contestid : candidate.getLocation().getContestids()) {
+                    if (contestid.getContestid() == 1) {
+                        contestid.setMembers(contestid.getMembers() - teamid1);
+                    }
+                    if (contestid.getContestid() == 2) {
+                        contestid.setMembers(contestid.getMembers() - teamid2);
+
+                    }
+                    if (contestid.getContestid() == 3) {
+                        contestid.setMembers(contestid.getMembers() - teamid3);
+                    }
+                    if (contestid.getContestid() == 4) {
+                        contestid.setMembers(contestid.getMembers() - teamid4);
+                    }
+
+                }
+                candidate.getTeams().add(team);
+
+            }
+        }
+        return candidatelist;
+    }
+
+    public Areascore findACommonLocationByArea(List<String> capableLocations, Team team, Double neighborScores) {
+        Areascore area = new Areascore();
+        area.setStartarea(team.getSchoolid());
+        area.setScores(999999.00);
+        String startarea = team.getName().split("(?<=區)")[0];
+        for (String location : capableLocations) {
+            Areascore tmp = areascoreRepository.findByStartareaAndEndarea(startarea, schoolrepository.findBySchoolid(location).getSchoolname().split("(?<=區)")[0]);
+            if (tmp.getScores() < area.getScores()) {
+                area.setEndarea(location);
+                area.setScores(tmp.getScores());
+            }
+        }
+
+        return area;
+    }
+
+    public String findABetterLocation(List<String> capableLocations, Team team) {
+        String pos1 = schoolrepository.findBySchoolid(team.getSchoolid()).getPosition();
+        Double latitude1 = Double.valueOf(pos1.split(",")[0]);
+        Double longitude1 = Double.valueOf(pos1.split(",")[1]);
+        String locationid = "";
+        double distance = 99999999;
+
+        for (String capableLocationid : capableLocations) {
+            School location = schoolrepository.findBySchoolid(capableLocationid);
+            Double latitude2 = Double.valueOf(location.getPosition().split(",")[0]);
+            Double longitude2 = Double.valueOf(location.getPosition().split(",")[1]);
+
+            //找到較近場地
+            if (distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2) < distance) {
+                locationid = capableLocationid;
+                distance = distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2);
+            }
+        }
+        return locationid;
     }
 
     //尋找最短試場, 回傳locationid, 如果沒有可容納場地, 回傳locationid:999999
@@ -295,18 +523,18 @@ public class LocationService {
         }
     }
 
-    public List<Candidate> setHomeLocation(List<Candidate> candidatelist, Team team) {
-        for (Candidate candidate : candidatelist) {
-            if (candidate.getLocation().getSchoolid().equals(team.getSchoolid())) {
-                team.setDistance(0);
-                candidate.getTeams().add(team);
-                Integer capacity = candidate.getLocation().getCapacity() - team.getMembers();
-                candidate.getLocation().setCapacity(capacity);
-            }
-        }
-
-        return candidatelist;
-    }
+//    public List<Candidate> setHomeLocation(List<Candidate> candidatelist, Team team) {
+//        for (Candidate candidate : candidatelist) {
+//            if (candidate.getLocation().getSchoolid().equals(team.getSchoolid())) {
+//                team.setDistance(0);
+//                candidate.getTeams().add(team);
+//                Integer capacity = candidate.getLocation().getCapacity() - team.getMembers();
+//                candidate.getLocation().setCapacity(capacity);
+//            }
+//        }
+//
+//        return candidatelist;
+//    }
 
 
     public List<Candidate> findLocation(List<Candidate> candidatelist, Team team, Double nearDistance) {
@@ -348,7 +576,7 @@ public class LocationService {
             School location = schoolrepository.findBySchoolid(ticket);
             Double latitude2 = Double.valueOf(location.getPosition().split(",")[0]);
             Double longitude2 = Double.valueOf(location.getPosition().split(",")[1]);
-            team.setDistance(distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2));
+            team.setScores(distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2));
 
 
             candidatelist.forEach(candidate -> {
@@ -369,11 +597,11 @@ public class LocationService {
             School location = schoolrepository.findBySchoolid(locationid);
             Double latitude2 = Double.valueOf(location.getPosition().split(",")[0]);
             Double longitude2 = Double.valueOf(location.getPosition().split(",")[1]);
-            team.setDistance(distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2));
+            team.setScores(distanceservice.getDistance(latitude1, longitude1, latitude2, longitude2));
 
             if (team.getSchoolid().equals("999999")) {
                 System.out.println("排不到場地");
-                team.setDistance(500000);
+                team.setScores(999999);
             }
 
 

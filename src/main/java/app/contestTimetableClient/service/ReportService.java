@@ -43,7 +43,7 @@ public class ReportService {
     public void insertData(String url, Report report) {
         RestTemplate resttemplate = new RestTemplate();
 
-        String target = String.format("%s/%s",url,report.getUuid());
+        String target = String.format("%s/%s", url, report.getUuid());
 //        System.out.println(target);
 //        report.setTotaldistance(distanceservice.getTotalDistance(report.getCandidateList()));
 //        System.out.println(target);
@@ -51,7 +51,7 @@ public class ReportService {
 //        ResponseEntity<Report> response = resttemplate
 //                .exchange(url, HttpMethod.POST, request, Report.class);
 
-      resttemplate.postForObject(target, report, String.class);
+        resttemplate.postForObject(target, report, String.class);
 
     }
 

@@ -1,13 +1,13 @@
 package app.contestTimetableClient.model;
 
-import java.util.ArrayList;
+import java.util.List;
 
 public class Report {
 
     private String uuid;
 
 
-    private ArrayList<Candidate> candidateList;
+    private List<Candidate> candidateList;
     private double totaldistance;
 
 
@@ -23,11 +23,11 @@ public class Report {
     }
 
 
-    public ArrayList<Candidate> getCandidateList() {
+    public List<Candidate> getCandidateList() {
         return candidateList;
     }
 
-    public void setCandidateList(ArrayList<Candidate> candidateList) {
+    public void setCandidateList(List<Candidate> candidateList) {
         this.candidateList = candidateList;
     }
 

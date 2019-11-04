@@ -15,7 +15,7 @@ public class Team {
     private String name;
     private int members;
 
-    private double distance;
+    private double scores;
 
     @ElementCollection(fetch = FetchType.EAGER)
     private List<Contestid> contestids = new ArrayList<Contestid>();
@@ -23,11 +23,11 @@ public class Team {
     public Team() {
     }
 
-    public Team(String schoolid, String name, int members, double distance, List<Contestid> contestids) {
+    public Team(String schoolid, String name, int members, double scores, List<Contestid> contestids) {
         this.schoolid = schoolid;
         this.name = name;
         this.members = members;
-        this.distance = distance;
+        this.scores = scores;
         this.contestids = contestids;
     }
 
@@ -57,14 +57,13 @@ public class Team {
         this.members = members;
     }
 
-    public double getDistance() {
-        return distance;
+    public double getScores() {
+        return scores;
     }
 
-    public void setDistance(double distance) {
-        this.distance = distance;
+    public void setScores(double scores) {
+        this.scores = scores;
     }
-
 
     public List<Contestid> getContestids() {
         return contestids;
