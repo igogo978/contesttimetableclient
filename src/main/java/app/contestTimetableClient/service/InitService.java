@@ -11,10 +11,12 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,6 +39,8 @@ public class InitService {
     public void initSchool(String url, String target) throws IOException {
         //取得所有學校
         RestTemplate resttemplate = new RestTemplate();
+        resttemplate.getMessageConverters()
+                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -48,16 +52,22 @@ public class InitService {
         node = mapper.readTree(result.getBody());
 
         node.forEach(school -> {
+
             String schoolid = school.get("schoolid").asText();
             String schoolname = school.get("schoolname").asText();
-            String position = school.get("position").asText();
-            schoolrepository.save(new School(schoolid, schoolname, position));
+//            System.out.println(schoolname);
+
+//            String position = school.get("position").asText();
+//            schoolrepository.save(new School(schoolid, schoolname, position));
+            schoolrepository.save(new School(schoolid, schoolname));
         });
     }
 
 
     public void initLocation(String url, String target) throws IOException {
         RestTemplate resttemplate = new RestTemplate();
+        resttemplate.getMessageConverters()
+                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -81,6 +91,8 @@ public class InitService {
 
     public void initTeam(String url, String target) throws IOException {
         RestTemplate resttemplate = new RestTemplate();
+        resttemplate.getMessageConverters()
+                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -109,6 +121,8 @@ public class InitService {
     public List<Ticket> initTicket(String url, String target) throws IOException {
         List<Ticket> tickets = new ArrayList<>();
         RestTemplate resttemplate = new RestTemplate();
+        resttemplate.getMessageConverters()
+                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -131,6 +145,8 @@ public class InitService {
     public void initScoresArea(String url, String target) throws IOException {
         List<Areascore> areas = new ArrayList<>();
         RestTemplate resttemplate = new RestTemplate();
+        resttemplate.getMessageConverters()
+                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
         JsonNode root = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();

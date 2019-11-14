@@ -7,7 +7,7 @@ import app.contestTimetableClient.repository.LocationRepository;
 import app.contestTimetableClient.repository.SchoolRepository;
 import app.contestTimetableClient.repository.TeamRepository;
 import app.contestTimetableClient.service.LocationService;
-import app.contestTimetableClient.service.DistanceService;
+import app.contestTimetableClient.service.ScoresService;
 import app.contestTimetableClient.service.InitService;
 import app.contestTimetableClient.service.ReportService;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -23,12 +23,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.File;
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @SpringBootApplication
 public class ContestTimetableClientApplication implements CommandLineRunner {
@@ -46,7 +42,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
     TeamRepository teamrepository;
 
     @Autowired
-    DistanceService distanceservice;
+    ScoresService scoresService;
 
     @Autowired
     LocationService locationService;
@@ -83,8 +79,9 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
         String target;
 
         //計算每多少筆後,取ranking值為前面筆數者, 寫入server 端
-        Integer split = 2000;
-        Integer ranking = 1;
+        Integer split = 10;
+        Integer job = 100;
+
 
         //確認設定檔
         if (new File(String.format("%s/%s", cwd, configfile)).isFile()) {
@@ -93,26 +90,27 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
             node = mapper.readTree(new File(String.format("%s/%s", cwd, configfile)));
             url = node.get("url").asText();
             split = node.get("split").asInt();
-            ranking = node.get("ranking").asInt();
+            job = node.get("job").asInt();
+
         } else {
             System.out.println("無設定檔");
             System.exit(0);
         }
 
         //取得所有學校
-        initservice.initSchool(url, "school");
+        initservice.initSchool(url, "api/school");
 //
         //取得場地容納人數
-        initservice.initLocation(url, "location");
+        initservice.initLocation(url, "api/location");
 
         //參賽隊
-        initservice.initTeam(url, "schoolteam");
+        initservice.initTeam(url, "api/schoolteam");
 
         //取得有門票隊伍
         List<Ticket> tickets = initservice.initTicket(url, "/api/ticket");
 
         //行政區得分表
-        initservice.initScoresArea(url, "/scores/area");
+        initservice.initScoresArea(url, "/api/scores/area");
 
         //請求工作
         target = String.format("%s/%s", url, "job");
@@ -126,99 +124,55 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
         String group1order = node.get("group1order").asText();
         String group2order = node.get("group2order").asText();
 
-        //計算工作次數
-        Integer count = node.get("count").asInt();
 
         List<String> locations = Arrays.asList(locationorder.split("-"));
         List<String> priority = Arrays.asList(priorityorder.split("-"));
         List<String> group1 = Arrays.asList(group1order.split("-"));
         List<String> group2 = Arrays.asList(group2order.split("-"));
-        Integer counter = 0;
+
         ArrayList<Report> reports = new ArrayList<>();
 
-        Report report = doJob(locations, priority, group1, group2, tickets, neighborScores);
-
-        reports.add(report);
-        System.out.println("建議名單:\n" + mapper.writeValueAsString(report));
-
         target = url + "api/report/uuid/";
-//        System.out.println(reportservice.isUuidExist(target, report.getUuid()));
+        for (int i = 0; i <= job; i++) {
+            Report report = doJob(locations, priority, group1, group2, tickets, neighborScores);
+            reports.add(report);
+            if (i%50 == 0 && i !=0) {
+                System.out.println(String.format("目前進度 已計算 %s 筆", i));
+            }
+            if (reports.size() == split) {
+//                System.out.println(i);
+                //排序
+                reports.sort(Comparator.comparing(Report::getTotalscores));
+//                reports.forEach(r -> System.out.println(r.getTotalscores()));
 
-        if (!reportservice.isUuidExist(target, report.getUuid())) {
-            //若無則寫入此次記錄
-            System.out.println("寫入記錄");
-            reportservice.insertData(target, report);
+                //取出第一筆寫入
+                report = reports.get(0);
+                System.out.println("建議名單:\n" + mapper.writeValueAsString(report));
+                if (!reportservice.isUuidExist(target, report.getUuid())) {
+                    //若無則寫入此次記錄
+                    System.out.println("寫入記錄");
+                    reportservice.insertData(target, report);
+                    reports.clear();
+                }
+
+            }
         }
 
-//
-//
-//        //是否取得門票
-//        initservice.initTicket(url, "ticket");
-//
-//
-//        //請求工作, 要算幾輪
-//        for (int round = 0; round < rounds; round++) {
-//            target = String.format("%s/%s?action=true", url, String.format("job/%s", contestid));
-//
-//            response = resttemplate.getForEntity(target, String.class);
-//            node = mapper.readTree(response.getBody());
-//            String jobid = node.get("jobid").asText();
-//
-//
-//            String locationorder = node.get("locationorder").asText();
-//            String group1order = node.get("group1order").asText();
-//            String group2order = node.get("group2order").asText();
-//
-//            Long calculatejob = node.get("calculatejob").asLong();
-//
-//            List<String> locations = Arrays.asList(locationorder.split("-"));
-//            List<String> group1 = Arrays.asList(group1order.split("-"));
-//            List<String> group2 = Arrays.asList(group2order.split("-"));
-//            //locationorder, group1order 為固定排序
-//            //每一個jobid 會指派計算次數
-//            Integer counter = 0;
-//            ArrayList<Report> reports = new ArrayList<>();
-//            for (int job = 0; job < calculatejob; job++) {
-//                //建立候選名單 - 空的 例如:場地一可容納team1, team2, team3
-////                    System.out.println(String.format("caltulate times:%s-%s", round, job));
-//                Report report = doJob(locations, group1, group2, acceptDistance);
-//
-//                reports.add(report);
-//
-//                counter++;
-//                if (counter >= split) {
-//                    counter = 0;
-//                    reports.sort(Comparator.comparing(Report::getTotaldistance));
-//
-//                    reports.forEach(r -> System.out.println(r.getTotaldistance()));
-//
-//                    System.out.println("排序後寫入理想筆數：" + ranking);
-//                    updateReports(reports.subList(0, ranking), url, contestid);
-//                    //清空reports, 重新計算
-//                    reports.clear();
-//                }
-//
+    }
+
+//    private void updateReports(List<Report> reports, String url, Integer contestid) throws IOException {
+//        for (Report report : reports) {
+//            //檢查uuid 是否已存在
+//            String target = String.format("%s/job/%s/report", url, contestid);
+//            if (!reportservice.isUuidExist(target, report.getUuid())) {
+//                //若無則寫入此次記錄
+//                reportservice.insertData(target, report);
 //            }
 //
-//
 //        }
-
-
-    }
-
-    private void updateReports(List<Report> reports, String url, Integer contestid) throws IOException {
-        for (Report report : reports) {
-            //檢查uuid 是否已存在
-            String target = String.format("%s/job/%s/report", url, contestid);
-            if (!reportservice.isUuidExist(target, report.getUuid())) {
-                //若無則寫入此次記錄
-                reportservice.insertData(target, report);
-            }
-
-        }
-
-
-    }
+//
+//
+//    }
 
     private Report doJob(List<String> locations, List<String> priority, List<String> group1, List<String> group2, List<Ticket> tickets, Double neighborScores) throws JsonProcessingException, UnsupportedEncodingException {
         ObjectMapper mapper = new ObjectMapper();
@@ -253,8 +207,11 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
             //比對優先排在主場的隊伍, /api/ticket
             Team team = teamrepository.findBySchoolid(schoolid);
 
+
             if (tickets.stream().anyMatch(ticket -> ticket.getSchoolid().equals(schoolid))) {
-                candidateList = locationService.addTicketTeam(candidateList, schoolid, team);
+                Ticket ticket = tickets.stream()
+                                .filter(t->t.getSchoolid().equals(schoolid)).findAny().get();
+                candidateList = locationService.addTicketTeam(candidateList, ticket, team);
             } else {
                 candidateList = locationService.addPriorityTeam(candidateList, team);
             }
@@ -280,7 +237,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
                 } else {
                     //沒有鄰居, 找一個最近的
 //                    String locationid = locationService.findABetterLocation(capableLocations, team);
-                    Areascore area = locationService.findACommonLocationByArea(capableLocations,team, neighborScores);
+                    Areascore area = locationService.findACommonLocationByArea(capableLocations, team, neighborScores);
                     candidateList = locationService.addTeam(candidateList, team, area);
 
                 }
@@ -311,7 +268,7 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
                     candidateList = locationService.addTeamByArea(candidateList, team, neighborLocations.get(randomidx));
                 } else {
                     //沒有鄰居, 找一個最近的
-                    Areascore area = locationService.findACommonLocationByArea(capableLocations,team, neighborScores);
+                    Areascore area = locationService.findACommonLocationByArea(capableLocations, team, neighborScores);
                     candidateList = locationService.addTeam(candidateList, team, area);
 
                 }
@@ -349,49 +306,11 @@ public class ContestTimetableClientApplication implements CommandLineRunner {
         //需要傳送uuid 在網址列並存入資料庫, sha256計算後,資料長度短
         String uuid = org.apache.commons.codec.digest.DigestUtils.sha256Hex(locationorder.toString() + priorityorder.toString() + group1order.toString() + group2order.toString());
 
-        //        System.out.println("uuid:" + locationorder.toString() + priorityorder.toString() + group1order.toString() + group2order.toString());
-//        StringBuilder group1order = new StringBuilder();
-//        group1.forEach(schoolid -> group1order.append(schoolid + "-"));
-//
-//        //打亂取群组2的顺序
-//        Collections.shuffle(group2);
-//        StringBuilder smallgrouporder = new StringBuilder();
-//        group2.forEach(schoolid -> {
-//            teams.add(teamrepository.findBySchoolid(schoolid));
-//            smallgrouporder.append(schoolid + "-");
-//        });
-//
-//
-//
-//        //開始安排場地
-//        for (int i = 0; i < teams.size(); i++) {
-//            System.out.println(String.format("安排%s", teams.get(i).getName()));
-//            //主場隊伍
-//            if (locationService.isHomeLocation(candidateList, teams.get(i))) {
-//                candidateList = locationService.setHomeLocation(candidateList, teams.get(i));
-////                System.out.println(String.format("%s is in home:%s", teams.get(i).getName(), teams.get(i).getMembers()));
-//            } else if (locationService.hasTicketAndCapacity(candidateList, teams.get(i))) {
-//                //已有門票者
-////                System.out.println("已有門票喔");
-//                candidateList = locationService.setTicketLocation(candidateList, teams.get(i));
-//
-//            } else {
-//                //找到一場地為最短的距離
-////                System.out.println(String.format("%s find a location.", teams.get(i).getName()));
-//                candidateList = locationService.findLocation(candidateList, teams.get(i), acceptDistance);
-//            }
-////            System.out.println(uuid);
-////            System.out.println(mapper.writeValueAsString(candidateList));
-//        }
-//
-//
-//
-//        String uuid = org.apache.commons.codec.digest.DigestUtils.sha256Hex(locationorder.toString() + group1order + smallgrouporder);
-//        System.out.println("建議名單:\n" + mapper.writeValueAsString(candidateList));
         Report report = new Report();
         report.setUuid(uuid);
         report.setCandidateList(candidateList);
-        report.setTotaldistance(distanceservice.getTotalDistance(report.getCandidateList()));
+        report.setTotalscores(scoresService.getTotalScores(report.getCandidateList()));
+        report.setScoresFrequency(scoresService.getScoresFrequency(report.getCandidateList()));
         return report;
     }
 }

@@ -8,8 +8,9 @@ public class Report {
 
 
     private List<Candidate> candidateList;
-    private double totaldistance;
+    private double totalscores;
 
+    private String scoresFrequency;
 
     public Report() {
     }
@@ -31,12 +32,19 @@ public class Report {
         this.candidateList = candidateList;
     }
 
-    public double getTotaldistance() {
-        return totaldistance;
+    public double getTotalscores() {
+        return totalscores;
     }
 
-    public void setTotaldistance(double totaldistance) {
-        this.totaldistance = totaldistance;
+    public void setTotalscores(double totalscores) {
+        this.totalscores = totalscores;
     }
 
+    public String getScoresFrequency() {
+        return scoresFrequency;
+    }
+
+    public void setScoresFrequency(String scoresFrequency) {
+        this.scoresFrequency = scoresFrequency;
+    }
 }

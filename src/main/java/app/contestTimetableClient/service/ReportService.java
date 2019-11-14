@@ -1,25 +1,21 @@
 package app.contestTimetableClient.service;
 
 
-import app.contestTimetableClient.model.Candidate;
 import app.contestTimetableClient.model.Report;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
-import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 @Service
 public class ReportService {
 
     @Autowired
-    DistanceService distanceservice;
+    ScoresService distanceservice;
 
 
     public Boolean isUuidExist(String url, String uuid) throws IOException {
