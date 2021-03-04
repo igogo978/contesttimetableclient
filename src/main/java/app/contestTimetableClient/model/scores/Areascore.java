@@ -10,13 +10,23 @@ import javax.persistence.Id;
 public class Areascore {
 
     @Id
-    @GeneratedValue(strategy= GenerationType.AUTO)
-    private Long id;
+    private String id;
 
     private String startarea;
     private String endarea;
 
     private Double scores;
+
+    private Boolean isPriorityArea;
+
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 
     public String getStartarea() {
         return startarea;
@@ -40,5 +50,13 @@ public class Areascore {
 
     public void setScores(Double scores) {
         this.scores = scores;
+    }
+
+    public Boolean getPriorityArea() {
+        return isPriorityArea;
+    }
+
+    public void setPriorityArea(Boolean priorityArea) {
+        isPriorityArea = priorityArea;
     }
 }

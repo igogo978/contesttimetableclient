@@ -1,6 +1,31 @@
-{	
-    "url" : "http://140.128.51.26:8080",	
-	"split" : 1000,
-	"job" : 1100
-
+{
+	"url": "http://172.21.199.177:8080",
+	"job": 4,
+	"split": 2,
+	"priorityArea": [{
+		"location": "后里區",
+		"area": "后里區"
+	}, {
+		"location": "石岡區",
+		"area": "新社區,和平區,東勢區,石岡區"
+	}],
+	"weights": [{
+		"scores": 5,
+		"weights": 100
+	}, {
+		"scores": 4,
+		"weights": 51
+	}, {
+		"scores": 3,
+		"weights": 20
+	}],
+	"priorityScores": [{
+		"group": "group1",
+		"scores": 1.0
+	},
+		{
+			"group": "group2",
+			"scores": 1.0
+		}
+	]
 }

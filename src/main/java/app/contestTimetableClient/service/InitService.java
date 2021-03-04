@@ -17,8 +17,11 @@ import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class InitService {
@@ -40,7 +43,7 @@ public class InitService {
         //取得所有學校
         RestTemplate resttemplate = new RestTemplate();
         resttemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -67,7 +70,7 @@ public class InitService {
     public void initLocation(String url, String target) throws IOException {
         RestTemplate resttemplate = new RestTemplate();
         resttemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -81,7 +84,6 @@ public class InitService {
             Integer capacity = location.get("capacity").asInt();
             List<Contestid> contestids = new ArrayList<>();
             location.get("contestids").forEach(contestidNode -> {
-//               System.out.println(contestidNode.get("contestid").asInt());
                 contestids.add(new Contestid(contestidNode.get("contestid").asInt(), contestidNode.get("members").asInt()));
             });
             locationrepository.save(new Location(schoolid, name, capacity, contestids));
@@ -92,7 +94,7 @@ public class InitService {
     public void initTeam(String url, String target) throws IOException {
         RestTemplate resttemplate = new RestTemplate();
         resttemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -122,7 +124,7 @@ public class InitService {
         List<Ticket> tickets = new ArrayList<>();
         RestTemplate resttemplate = new RestTemplate();
         resttemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         JsonNode node = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -142,11 +144,11 @@ public class InitService {
         return tickets;
     }
 
-    public void initScoresArea(String url, String target) throws IOException {
-        List<Areascore> areas = new ArrayList<>();
+    public void initScoresArea(String url, String target, List<PriorityArea> priorityAreas) throws IOException {
+//        List<Areascore> areas = new ArrayList<>();
         RestTemplate resttemplate = new RestTemplate();
         resttemplate.getMessageConverters()
-                .add(0, new StringHttpMessageConverter(Charset.forName("UTF-8")));
+                .add(0, new StringHttpMessageConverter(StandardCharsets.UTF_8));
         JsonNode root = null;
         ResponseEntity<String> result = null;
         ObjectMapper mapper = new ObjectMapper();
@@ -154,15 +156,24 @@ public class InitService {
         result = resttemplate.getForEntity(site, String.class);
 
         root = mapper.readTree(result.getBody());
+        Areascore[] areas = mapper.readValue(result.getBody(), Areascore[].class);
 
-        root.forEach(node->{
-            Areascore area = new Areascore();
-            area.setStartarea(node.get("startarea").asText());
-            area.setEndarea(node.get("endarea").asText());
-            area.setScores(node.get("scores").asDouble());
-            areascoreRepository.save(area);
+        Arrays.asList(areas).forEach(areascore -> {
+            areascore.setPriorityArea(Boolean.FALSE);
+            areascoreRepository.save(areascore);
         });
 
+        priorityAreas.forEach(priorityArea -> {
+            priorityArea.getAreas().forEach(area -> {
+                String id = String.format("%s%s", area, priorityArea.getLocation());
+                Optional<Areascore> areascore = areascoreRepository.findById(id);
+                if (areascore.isPresent()) {
+                    areascore.get().setPriorityArea(Boolean.TRUE);
+                    areascoreRepository.save(areascore.get());
+                }
+            });
+
+        });
 
     }
 
